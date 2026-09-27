@@ -1,0 +1,254 @@
+package edu.upb.lp.game.bugworld;
+
+import edu.upb.lp.game.core.GameController;
+import edu.upb.lp.game.core.GameUI;
+import edu.upb.lp.game.core.StorageManager;
+
+public class BugWorldController implements GameController {
+
+	private static final String BTN_RESTART = "Restart";
+	private static final String BTN_PASS_DAY = "Pass Day";
+	private static final String BTN_BUY_FOOD = "Buy Food";
+	private static final String BTN_SELL_BUG = "Sell Bug";
+	private static final String BTN_CLEAN_CELL = "Clean Cell";
+	private String dayLoopId;
+
+	private final GameUI ui;
+	private BugWorld world;
+	private StorageManager storageManager;
+	private ScoreManager scoreManager;
+
+	private int selectedRow = -1;
+	private int selectedCol = -1;
+
+	public BugWorldController(GameUI ui) {
+		this.ui = ui;
+		this.world = new BugWorld(ui);
+		this.storageManager = new StorageManager();
+		this.scoreManager = new ScoreManager(ui, storageManager);
+	}
+	
+	Runnable dayRunnable = new Runnable() {
+		@Override
+		public void run() {
+			processDay();
+		}
+	};
+
+	private void processDay() {
+	    world.day();
+	    updateInterface();
+	}
+	
+	@Override
+	public void initialiseInterface() {
+		ui.configureGrid(world.getRows(), world.getCols());
+
+		ui.addButton(BTN_RESTART);
+		ui.addButton(BTN_PASS_DAY);
+		ui.addButton(BTN_BUY_FOOD);
+		startLoop();
+		updateInterface();
+	}
+
+	@Override
+	public void onButtonPressed(String name) {
+		ui.playSound("click");
+		switch (name) {
+		case BTN_RESTART:
+			restartGame();
+			break;
+
+		case BTN_PASS_DAY:
+			world.day();
+			break;
+
+		case BTN_BUY_FOOD:
+			world.buyFood();
+			break;
+
+		case BTN_SELL_BUG:
+			if (hasSelectedCell()) {
+				world.sellBug(selectedRow, selectedCol);
+			}
+			break;
+
+		case BTN_CLEAN_CELL:
+			if (hasSelectedCell()) {
+				world.cleanCell(selectedRow, selectedCol);
+			}
+			break;
+		}
+
+		updateInterface();
+	}
+
+	@Override
+	public void onCellPressed(int row, int col) {
+		if (selectedRow == row && selectedCol == col) {
+			clearSelection();
+		} else {
+			if (canMoveSelectedBugTo(row, col)) {
+				world.moveBug(selectedRow, selectedCol, row, col);
+			}
+
+			selectedRow = row;
+			selectedCol = col;
+		}
+
+		updateInterface();
+	}
+
+	private void restartGame() {
+		scoreManager.checkHighScore(world.getScore());
+		
+		world = new BugWorld(ui);
+		ui.stopLoop(dayLoopId);
+		startLoop();
+		clearSelection();
+		updateInterface();
+	}
+	
+	private void startLoop() {
+		dayLoopId = ui.executeRepeatedly(dayRunnable, 10000);
+		/*
+		 * dayLoopId = ui.executeRepeatedly(() -> { world.day(); updateInterface(); },
+		 * 10000);
+		 */
+	}
+
+	private boolean canMoveSelectedBugTo(int row, int col) {
+		if (!hasSelectedCell()) {
+			return false;
+		}
+
+		Cell selectedCell = world.getCell(selectedRow, selectedCol);
+
+		boolean selectedCellHasBug = selectedCell.isBugAlive();
+		boolean destinationIsClose = Math.abs(selectedRow - row) <= 1 && Math.abs(selectedCol - col) <= 1;
+
+		boolean sameCell = selectedRow == row && selectedCol == col;
+
+		return selectedCellHasBug && destinationIsClose && !sameCell;
+	}
+
+	private boolean hasSelectedCell() {
+		return selectedRow >= 0 && selectedCol >= 0;
+	}
+
+	private void clearSelection() {
+		selectedRow = -1;
+		selectedCol = -1;
+	}
+
+	private void updateInterface() {
+		updateLabels();
+		updateCells();
+		updateActionButtons();
+	}
+
+	private void updateLabels() {
+		ui.setLabel("score", "Score: " + world.getScore());
+		ui.setLabel("money", "Money: " + world.getMoney());
+		ui.setLabel("foodPrice", "Food price: " + world.getFoodPrice());
+		ui.setLabel("highScore", "High score: " + scoreManager.getHighScore() + " (" + scoreManager.getHighScoreName() + ")");
+		if (hasSelectedCell()) {
+			Cell cell = world.getCell(selectedRow, selectedCol);
+
+			if (cell.isBugAlive()) {
+				Bug bug = cell.getBug();
+				ui.setLabel("selected", "Selected: Bug");
+				ui.setLabel("age", "Age: " + bug.getAge());
+				ui.setLabel("hunger", "Hunger: " + bug.getHunger());
+				ui.setLabel("fun", "Fun: " + bug.getFun());
+			} else if (cell.hasBug()) {
+				ui.setLabel("selected", "Selected: Dead bug");
+				ui.setLabel("age", "Age: -");
+				ui.setLabel("hunger", "Hunger: -");
+				ui.setLabel("fun", "Fun: -");
+			} else if (cell.getFood() > 0) {
+				ui.setLabel("selected", "Selected: Food");
+				ui.setLabel("age", "Food: " + cell.getFood());
+				ui.setLabel("hunger", "Hunger: -");
+				ui.setLabel("fun", "Fun: -");
+			} else {
+				ui.setLabel("selected", "Selected: Empty cell");
+				ui.setLabel("age", "Age: -");
+				ui.setLabel("hunger", "Hunger: -");
+				ui.setLabel("fun", "Fun: -");
+			}
+		} else {
+			ui.setLabel("selected", "Selected: none");
+			ui.setLabel("age", "Age: -");
+			ui.setLabel("hunger", "Hunger: -");
+			ui.setLabel("fun", "Fun: -");
+		}
+	}
+
+	private void updateCells() {
+		for (int row = 0; row < world.getRows(); row++) {
+			for (int col = 0; col < world.getCols(); col++) {
+				renderCell(row, col);
+			}
+		}
+	}
+
+	private void renderCell(int row, int col) {
+		Cell cell = world.getCell(row, col);
+		boolean selected = selectedRow == row && selectedCol == col;
+
+		if (selected) {
+			ui.setCellBackgroundImage(row, col, "colors_blue");
+		} else {
+			ui.setCellBackgroundImage(row, col, "colors_grey");
+		}
+
+		ui.clearCellObjectImage(row, col);
+		ui.setCellText(row, col, "");
+
+		if (cell.isEmpty()) {
+			return;
+		}
+
+		if (cell.getFood() > 0) {
+			ui.setCellObjectImage(row, col, "food");
+			ui.setCellText(row, col, String.valueOf(cell.getFood()));
+			return;
+		}
+
+		Bug bug = cell.getBug();
+
+		if (bug == null) {
+			return;
+		}
+
+		if (bug.isDead()) {
+			ui.setCellObjectImage(row, col, "bugs_dead_bug");
+		} else if (bug.getHunger() > 10) {
+			ui.setCellObjectImage(row, col, "bugs_hungry_bug");
+		} else if (bug.getFun() < 10) {
+			ui.setCellObjectImage(row, col, "bugs_sad_bug");
+		} else if (bug.getAge() > 15) {
+			ui.setCellObjectImage(row, col, "bugs_old_bug");
+		} else {
+			ui.setCellObjectImage(row, col, "bugs_happy_bug");
+		}
+	}
+
+	private void updateActionButtons() {
+		ui.removeButton(BTN_SELL_BUG);
+		ui.removeButton(BTN_CLEAN_CELL);
+
+		if (!hasSelectedCell()) {
+			return;
+		}
+
+		Cell cell = world.getCell(selectedRow, selectedCol);
+
+		if (cell.isBugAlive()) {
+			ui.addButton(BTN_SELL_BUG);
+		} else if (!cell.isEmpty()) {
+			ui.addButton(BTN_CLEAN_CELL);
+		}
+	}
+}
