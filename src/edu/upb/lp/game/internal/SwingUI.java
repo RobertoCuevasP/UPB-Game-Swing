@@ -4,9 +4,9 @@ import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
-import java.awt.Image;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,12 +14,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.imageio.ImageIO;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import javax.sound.sampled.LineEvent;
 
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -50,12 +50,10 @@ public class SwingUI extends JFrame implements GameUI {
 
 	private final Map<String, JButton> buttons = new HashMap<>();
 	private final Map<String, JLabel> labels = new HashMap<>();
-	private final Map<String, ImageIcon> imageCache = new HashMap<>();
+	private final Map<String, BufferedImage> imageCache = new HashMap<>();
 	private final Map<String, Timer> loops = new HashMap<>();
 	private final List<Clip> activeClips = new ArrayList<>();
 
-	private static final int CELL_SIZE = 80;
-	
 	public SwingUI() {
 		setTitle("UPBGame Swing Edition 2026");
 		setSize(900, 760);
@@ -133,14 +131,14 @@ public class SwingUI extends JFrame implements GameUI {
 	@Override
 	public void setCellBackgroundImage(int row, int col, String imageName) {
 		if (isValidCell(row, col)) {
-			cells[row][col].setBackgroundIcon(loadImage(imageName));
+			cells[row][col].setBackgroundImage(loadImage(imageName));
 		}
 	}
 
 	@Override
 	public void setCellObjectImage(int row, int col, String imageName) {
 		if (isValidCell(row, col)) {
-			cells[row][col].setObjectIcon(loadImage(imageName));
+			cells[row][col].setObjectImage(loadImage(imageName));
 		}
 	}
 
@@ -206,7 +204,7 @@ public class SwingUI extends JFrame implements GameUI {
 		return JOptionPane.showInputDialog(this, title);
 	}
 
-	private ImageIcon loadImage(String imageName) {
+	private BufferedImage loadImage(String imageName) {
 		if (imageName == null || imageName.isBlank()) {
 			return null;
 		}
@@ -223,14 +221,18 @@ public class SwingUI extends JFrame implements GameUI {
 			java.net.URL resource = getClass().getResource(path);
 
 			if (resource != null) {
-				ImageIcon original = new ImageIcon(resource);
+				try {
+					// Keep the original resolution; CellPanel scales it to the exact drawn size
+					BufferedImage image = ImageIO.read(resource);
 
-				Image scaled = original.getImage().getScaledInstance(CELL_SIZE, CELL_SIZE, Image.SCALE_SMOOTH);
-
-				ImageIcon icon = new ImageIcon(scaled);
-				imageCache.put(imageName, icon);
-
-				return icon;
+					if (image != null) {
+						imageCache.put(imageName, image);
+						return image;
+					}
+				} catch (java.io.IOException e) {
+					System.out.println("Error reading image: " + path);
+					e.printStackTrace();
+				}
 			}
 		}
 
