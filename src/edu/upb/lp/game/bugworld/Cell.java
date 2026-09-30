@@ -2,7 +2,7 @@ package edu.upb.lp.game.bugworld;
 
 public class Cell {
 
-    private BugWorld world;
+    private BugWorldGame world;
 
     private Bug bug;
     private int food;
@@ -10,7 +10,7 @@ public class Cell {
     private int row;
     private int col;
 
-    public Cell(int row, int col, BugWorld world) {
+    public Cell(int row, int col, BugWorldGame world) {
         this.row = row;
         this.col = col;
         this.world = world;

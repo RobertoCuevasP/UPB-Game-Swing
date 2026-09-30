@@ -2,7 +2,7 @@ package edu.upb.lp.game.bugworld;
 
 import edu.upb.lp.game.core.GameUI;
 
-public class BugWorld {
+public class BugWorldGame {
 
 	private final int rows = 8;
 	private final int cols = 8;
@@ -10,13 +10,18 @@ public class BugWorld {
 	private Cell[][] cells = new Cell[rows][cols];
 
 	private GameUI ui;
+	private BugWorldController controller;
 
 	private int money = 100;
 	private int score = 0;
 	private int foodPrice = 10;
 
-	public BugWorld(GameUI ui) {
+	private boolean manualDayPassed = false;
+	private String dayLoopId;
+
+	public BugWorldGame(GameUI ui, BugWorldController controller) {
 		this.ui = ui;
+		this.controller = controller;
 		initialiseWorld();
 	}
 
@@ -30,6 +35,18 @@ public class BugWorld {
 
 		cells[3][3].createBug();
 		cells[3][4].createBug();
+	}
+
+	public void startLoop() {
+		dayLoopId = ui.executeRepeatedly(new AutomaticDayPasser(this), 1000);
+		/*
+		 * dayLoopId = ui.executeRepeatedly(() -> { world.day(); updateInterface(); },
+		 * 10000);
+		 */
+	}
+
+	public void stopLoop() {
+		ui.stopLoop(dayLoopId);
 	}
 
 	public int getRows() {
@@ -63,6 +80,15 @@ public class BugWorld {
 			}
 		}
 		ui.showTemporaryMessage("A day has passed.");
+		manualDayPassed = true;
+	}
+
+	public void automaticDay() {
+		if (!manualDayPassed) {
+			day();
+			controller.updateInterface();
+		}
+		manualDayPassed = false;
 	}
 
 	public void buyFood() {

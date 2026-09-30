@@ -11,10 +11,9 @@ public class BugWorldController implements GameController {
 	private static final String BTN_BUY_FOOD = "Buy Food";
 	private static final String BTN_SELL_BUG = "Sell Bug";
 	private static final String BTN_CLEAN_CELL = "Clean Cell";
-	private String dayLoopId;
 
 	private final GameUI ui;
-	private BugWorld world;
+	private BugWorldGame world;
 	private StorageManager storageManager;
 	private ScoreManager scoreManager;
 
@@ -23,21 +22,9 @@ public class BugWorldController implements GameController {
 
 	public BugWorldController(GameUI ui) {
 		this.ui = ui;
-		this.world = new BugWorld(ui);
+		this.world = new BugWorldGame(ui, this);
 		this.storageManager = new StorageManager();
 		this.scoreManager = new ScoreManager(ui, storageManager);
-	}
-	
-	Runnable dayRunnable = new Runnable() {
-		@Override
-		public void run() {
-			processDay();
-		}
-	};
-
-	private void processDay() {
-	    world.day();
-	    updateInterface();
 	}
 	
 	@Override
@@ -47,7 +34,7 @@ public class BugWorldController implements GameController {
 		ui.addButton(BTN_RESTART);
 		ui.addButton(BTN_PASS_DAY);
 		ui.addButton(BTN_BUY_FOOD);
-		startLoop();
+		world.startLoop();
 		updateInterface();
 	}
 
@@ -102,20 +89,14 @@ public class BugWorldController implements GameController {
 	private void restartGame() {
 		scoreManager.checkHighScore(world.getScore());
 		
-		world = new BugWorld(ui);
-		ui.stopLoop(dayLoopId);
-		startLoop();
+		world = new BugWorldGame(ui, this);
+		world.stopLoop();
+		world.startLoop();
 		clearSelection();
 		updateInterface();
 	}
 	
-	private void startLoop() {
-		dayLoopId = ui.executeRepeatedly(dayRunnable, 10000);
-		/*
-		 * dayLoopId = ui.executeRepeatedly(() -> { world.day(); updateInterface(); },
-		 * 10000);
-		 */
-	}
+	
 
 	private boolean canMoveSelectedBugTo(int row, int col) {
 		if (!hasSelectedCell()) {
@@ -141,7 +122,7 @@ public class BugWorldController implements GameController {
 		selectedCol = -1;
 	}
 
-	private void updateInterface() {
+	public void updateInterface() {
 		updateLabels();
 		updateCells();
 		updateActionButtons();
