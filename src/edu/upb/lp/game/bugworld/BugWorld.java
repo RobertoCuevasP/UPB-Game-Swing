@@ -60,9 +60,9 @@ public class BugWorld {
 		for (int r = 0; r < rows; r++) {
 			for (int c = 0; c < cols; c++) {
 				cells[r][c].day();
-				ui.showTemporaryMessage("A day has passed.");
 			}
 		}
+		ui.showTemporaryMessage("A day has passed.");
 	}
 
 	public void buyFood() {
