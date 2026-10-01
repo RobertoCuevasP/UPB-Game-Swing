@@ -1,7 +1,5 @@
 package edu.upb.lp.game.bugworld;
 
-import edu.upb.lp.game.core.GameUI;
-
 public class BugWorldGame {
 
 	private final int rows = 8;
@@ -9,7 +7,6 @@ public class BugWorldGame {
 
 	private Cell[][] cells = new Cell[rows][cols];
 
-	private GameUI ui;
 	private BugWorldController controller;
 
 	private int money = 100;
@@ -17,10 +14,8 @@ public class BugWorldGame {
 	private int foodPrice = 10;
 
 	private boolean manualDayPassed = false;
-	private String dayLoopId;
 
-	public BugWorldGame(GameUI ui, BugWorldController controller) {
-		this.ui = ui;
+	public BugWorldGame(BugWorldController controller) {
 		this.controller = controller;
 		initialiseWorld();
 	}
@@ -35,18 +30,6 @@ public class BugWorldGame {
 
 		cells[3][3].createBug();
 		cells[3][4].createBug();
-	}
-
-	public void startLoop() {
-		dayLoopId = ui.executeRepeatedly(new AutomaticDayPasser(this), 1000);
-		/*
-		 * dayLoopId = ui.executeRepeatedly(() -> { world.day(); updateInterface(); },
-		 * 10000);
-		 */
-	}
-
-	public void stopLoop() {
-		ui.stopLoop(dayLoopId);
 	}
 
 	public int getRows() {
@@ -79,55 +62,58 @@ public class BugWorldGame {
 				cells[r][c].day();
 			}
 		}
-		ui.showTemporaryMessage("A day has passed.");
 		manualDayPassed = true;
 	}
 
-	public void automaticDay() {
+	public boolean automaticDay() {
+		boolean dayPassed = false;
 		if (!manualDayPassed) {
 			day();
-			controller.updateInterface();
+			dayPassed = true;
 		}
 		manualDayPassed = false;
+		return dayPassed;
 	}
 
-	public void buyFood() {
+	public boolean canAffordFood() {
+		return money >= foodPrice;
+	}
 
-		if (money < foodPrice) {
-			ui.showTemporaryMessage("Not enough money.");
-		} else {
-			int r = (int) (Math.random() * rows);
-			int c = (int) (Math.random() * cols);
-			int currentr = r;
-			int currentc = c;
-			boolean found = false;
-			do {
-				if (cells[currentr][currentc].isEmpty()) {
-					cells[currentr][currentc].setFood(20);
-					money -= foodPrice;
-					foodPrice++;
-					day();
-					found = true;
-				} else {
-					if (currentc == c - 1) {
-						currentc = 0;
-						if (currentr == r -1) {
-							currentr = 0;
-						} else {
-							currentr++;
-						}
-					} else {
-						currentc++;
-					}
-				}
-			} while ((currentr != r || currentc != c) && !found);
-			if (!found) {
-				ui.showTemporaryMessage("No more room for food!");
-			}
+	public boolean buyFood() {
+
+		if (!canAffordFood()) {
+			return false;
 		}
+
+		int r = (int) (Math.random() * rows);
+		int c = (int) (Math.random() * cols);
+		int currentr = r;
+		int currentc = c;
+		boolean found = false;
+		do {
+			if (cells[currentr][currentc].isEmpty()) {
+				cells[currentr][currentc].setFood(20);
+				money -= foodPrice;
+				foodPrice++;
+				day();
+				found = true;
+			} else {
+				if (currentc == cols - 1) {
+					currentc = 0;
+					if (currentr == rows - 1) {
+						currentr = 0;
+					} else {
+						currentr++;
+					}
+				} else {
+					currentc++;
+				}
+			}
+		} while ((currentr != r || currentc != c) && !found);
+		return found;
 	}
 
-	public void moveBug(int fromRow, int fromCol, int toRow, int toCol) {
+	public boolean moveBug(int fromRow, int fromCol, int toRow, int toCol) {
 
 		Cell origin = cells[fromRow][fromCol];
 		Cell target = cells[toRow][toCol];
@@ -138,10 +124,12 @@ public class BugWorldGame {
 			origin.setBug(null);
 			origin.setFood(0);
 			day();
+			return true;
 		}
+		return false;
 	}
 
-	public void sellBug(int row, int col) {
+	public boolean sellBug(int row, int col) {
 
 		Cell cell = cells[row][col];
 
@@ -151,7 +139,9 @@ public class BugWorldGame {
 			cell.setBug(null);
 
 			day();
+			return true;
 		}
+		return false;
 	}
 
 	public void cleanCell(int row, int col) {
@@ -197,22 +187,22 @@ public class BugWorldGame {
 			nc = col;
 		} else if (col < this.cols - 1 && cells[row][col + 1].isEmpty()) {
 			nr = row;
-			nc = col - 1;
+			nc = col + 1;
 		} else if (row < this.rows - 1 && cells[row + 1][col].isEmpty()) {
 			nr = row + 1;
 			nc = col;
 		}
-		
+
 		if (nr != -1 && nc != -1) {
-			ui.showTemporaryMessage("A bug was born in the position (" + nr + "," + nc + ")");
 			cells[nr][nc].createBug();
+			controller.bugBorn(nr, nc);
 		} else {
-			ui.showTemporaryMessage("The bug in position (" + row + "," + col + ") is trying to have a baby, but thre is no room!");
-		}		
+			controller.noRoomForBaby(row, col);
+		}
 	}
 
 	public void bugDied(int row, int col, String reason) {
-		ui.showTemporaryMessage("Bug at (" + row + "," + col + ") died: " + reason);
+		controller.bugDied(row, col, reason);
 	}
 
 	private boolean inside(int row, int col) {

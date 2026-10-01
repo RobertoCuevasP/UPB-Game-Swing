@@ -20,13 +20,15 @@ public class BugWorldController implements GameController {
 	private int selectedRow = -1;
 	private int selectedCol = -1;
 
+	private String dayLoopId;
+
 	public BugWorldController(GameUI ui) {
 		this.ui = ui;
-		this.world = new BugWorldGame(ui, this);
+		this.world = new BugWorldGame(this);
 		this.storageManager = new StorageManager();
 		this.scoreManager = new ScoreManager(ui, storageManager);
 	}
-	
+
 	@Override
 	public void initialiseInterface() {
 		ui.configureGrid(world.getRows(), world.getCols());
@@ -34,8 +36,26 @@ public class BugWorldController implements GameController {
 		ui.addButton(BTN_RESTART);
 		ui.addButton(BTN_PASS_DAY);
 		ui.addButton(BTN_BUY_FOOD);
-		world.startLoop();
+		startLoop();
 		updateInterface();
+	}
+
+	private void startLoop() {
+		dayLoopId = ui.executeRepeatedly(new AutomaticDayPasser(this), 10000);
+		/*
+		 * dayLoopId = ui.executeRepeatedly(() -> { automaticDay(); }, 1000);
+		 */
+	}
+
+	private void stopLoop() {
+		ui.stopLoop(dayLoopId);
+	}
+
+	public void automaticDay() {
+		if (world.automaticDay()) {
+			showDayPassed();
+			updateInterface();
+		}
 	}
 
 	@Override
@@ -48,21 +68,29 @@ public class BugWorldController implements GameController {
 
 		case BTN_PASS_DAY:
 			world.day();
+			showDayPassed();
 			break;
 
 		case BTN_BUY_FOOD:
-			world.buyFood();
+			if (!world.canAffordFood()) {
+				ui.showTemporaryMessage("Not enough money.");
+			} else if (world.buyFood()) {
+				showDayPassed();
+			} else {
+				ui.showTemporaryMessage("No more room for food!");
+			}
 			break;
 
 		case BTN_SELL_BUG:
-			if (hasSelectedCell()) {
-				world.sellBug(selectedRow, selectedCol);
+			if (hasSelectedCell() && world.sellBug(selectedRow, selectedCol)) {
+				showDayPassed();
 			}
 			break;
 
 		case BTN_CLEAN_CELL:
 			if (hasSelectedCell()) {
 				world.cleanCell(selectedRow, selectedCol);
+				showDayPassed();
 			}
 			break;
 		}
@@ -70,13 +98,29 @@ public class BugWorldController implements GameController {
 		updateInterface();
 	}
 
+	public void bugDied(int row, int col, String reason) {
+		ui.showTemporaryMessage("Bug at (" + row + "," + col + ") died: " + reason);
+	}
+
+	public void bugBorn(int row, int col) {
+		ui.showTemporaryMessage("A bug was born in the position (" + row + "," + col + ")");
+	}
+
+	public void noRoomForBaby(int row, int col) {
+		ui.showTemporaryMessage("The bug in position (" + row + "," + col + ") is trying to have a baby, but there is no room!");
+	}
+
+	private void showDayPassed() {
+		ui.showTemporaryMessage("A day has passed.");
+	}
+
 	@Override
 	public void onCellPressed(int row, int col) {
 		if (selectedRow == row && selectedCol == col) {
 			clearSelection();
 		} else {
-			if (canMoveSelectedBugTo(row, col)) {
-				world.moveBug(selectedRow, selectedCol, row, col);
+			if (canMoveSelectedBugTo(row, col) && world.moveBug(selectedRow, selectedCol, row, col)) {
+				showDayPassed();
 			}
 
 			selectedRow = row;
@@ -87,11 +131,11 @@ public class BugWorldController implements GameController {
 	}
 
 	private void restartGame() {
+		stopLoop();
 		scoreManager.checkHighScore(world.getScore());
-		
-		world = new BugWorldGame(ui, this);
-		world.stopLoop();
-		world.startLoop();
+
+		world = new BugWorldGame(this);
+		startLoop();
 		clearSelection();
 		updateInterface();
 	}
