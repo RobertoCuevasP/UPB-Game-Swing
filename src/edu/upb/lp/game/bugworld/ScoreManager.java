@@ -1,18 +1,18 @@
 package edu.upb.lp.game.bugworld;
 
-import edu.upb.lp.game.core.GameUI;
-import edu.upb.lp.game.core.StorageManager;
+import edu.upb.lp.game.core.MessagesLibrary;
+import edu.upb.lp.game.core.StorageLibrary;
 
 public class ScoreManager {
 
     private static final String HIGH_SCORE_KEY = "highScore";
     private static final String HIGH_SCORE_NAME_KEY = "highScoreName";
 
-    private final GameUI ui;
-    private final StorageManager storage;
+    private final MessagesLibrary messages;
+    private final StorageLibrary storage;
 
-    public ScoreManager(GameUI ui, StorageManager storage) {
-        this.ui = ui;
+    public ScoreManager(MessagesLibrary messages, StorageLibrary storage) {
+        this.messages = messages;
         this.storage = storage;
     }
 
@@ -34,7 +34,7 @@ public class ScoreManager {
         int highScore = getHighScore();
 
         if (currentScore > highScore) {
-            String playerName = ui.askText("New high score! Enter your name:");
+            String playerName = messages.askText("New high score! Enter your name:");
 
             if (playerName == null || playerName.isBlank()) {
                 playerName = "Anonymous";
@@ -43,9 +43,9 @@ public class ScoreManager {
             storage.storeInt(HIGH_SCORE_KEY, currentScore);
             storage.storeString(HIGH_SCORE_NAME_KEY, playerName);
 
-            ui.showTemporaryMessage("New high score: " + currentScore + " by " + playerName);
+            messages.showTemporaryMessage("New high score: " + currentScore + " by " + playerName);
         } else {
-            ui.showTemporaryMessage("High score: " + highScore + " by " + getHighScoreName());
+            messages.showTemporaryMessage("High score: " + highScore + " by " + getHighScoreName());
         }
     }
 }

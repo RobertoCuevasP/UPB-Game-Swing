@@ -1,14 +1,16 @@
-package edu.upb.lp.game.core;
+package edu.upb.lp.game.internal;
 
 import java.io.*;
 import java.util.Properties;
 
-public class StorageManager {
+import edu.upb.lp.game.core.StorageLibrary;
+
+public class FileStorage implements StorageLibrary {
 
 	private static final String FILE_NAME = "game-data.properties";
 	private final Properties properties = new Properties();
 
-	public StorageManager() {
+	public FileStorage() {
 		load();
 	}
 
@@ -32,20 +34,24 @@ public class StorageManager {
 		}
 	}
 
+	@Override
 	public void storeString(String key, String value) {
 		properties.setProperty(key, value);
 		save();
 	}
 
+	@Override
 	public String retrieveString(String key) {
 		return properties.getProperty(key, "");
 	}
 
+	@Override
 	public void storeInt(String key, int value) {
 		properties.setProperty(key, String.valueOf(value));
 		save();
 	}
 
+	@Override
 	public int retrieveInt(String key) {
 		String value = properties.getProperty(key, "0");
 
@@ -56,11 +62,13 @@ public class StorageManager {
 		}
 	}
 
+	@Override
 	public void storeBoolean(String key, boolean value) {
 		properties.setProperty(key, String.valueOf(value));
 		save();
 	}
 
+	@Override
 	public boolean retrieveBoolean(String key) {
 		return Boolean.parseBoolean(properties.getProperty(key, "false"));
 	}
