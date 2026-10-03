@@ -144,6 +144,38 @@ public class BugWorldController implements GameController {
 		updateInterface();
 	}
 
+	@Override
+	public void onKeyPressed(String key) {
+		int row = selectedRow;
+		int col = selectedCol;
+
+		switch (key) {
+		case "UP":
+			row--;
+			break;
+		case "DOWN":
+			row++;
+			break;
+		case "LEFT":
+			col--;
+			break;
+		case "RIGHT":
+			col++;
+			break;
+		default:
+			return;
+		}
+
+		boolean insideGrid = row >= 0 && row < world.getRows() && col >= 0 && col < world.getCols();
+
+		if (insideGrid && canMoveSelectedBugTo(row, col) && world.moveBug(selectedRow, selectedCol, row, col)) {
+			selectedRow = row;
+			selectedCol = col;
+			showDayPassed();
+			updateInterface();
+		}
+	}
+
 	private void restartGame() {
 		stopLoop();
 		scoreManager.checkHighScore(world.getScore());

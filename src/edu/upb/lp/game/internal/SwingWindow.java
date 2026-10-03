@@ -4,6 +4,9 @@ import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
+import java.awt.KeyEventDispatcher;
+import java.awt.KeyboardFocusManager;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
@@ -17,6 +20,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
 
@@ -71,6 +75,19 @@ public class SwingWindow extends JFrame implements GraphicsLibrary, MessagesLibr
 		southPanel.add(buttonPanel, BorderLayout.SOUTH);
 
 		add(southPanel, BorderLayout.SOUTH);
+
+		// Global dispatcher so keys are received even when a button has the focus
+		KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(new KeyEventDispatcher() {
+			@Override
+			public boolean dispatchKeyEvent(KeyEvent e) {
+				if (e.getID() == KeyEvent.KEY_PRESSED && controller != null) {
+					// Locale-independent key name: "UP", "DOWN", "A", "SPACE"...
+					String key = KeyStroke.getKeyStroke(e.getKeyCode(), 0).toString().replace("pressed ", "");
+					controller.onKeyPressed(key);
+				}
+				return false;
+			}
+		});
 
 		setLocationRelativeTo(null);
 		setVisible(true);
