@@ -195,6 +195,7 @@ public class BugWorldGame {
 
 		if (nr != -1 && nc != -1) {
 			cells[nr][nc].createBug();
+			score++;
 			controller.bugBorn(nr, nc);
 		} else {
 			controller.noRoomForBaby(row, col);
