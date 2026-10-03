@@ -17,12 +17,14 @@ public class CellPanel extends JPanel {
 	private transient BufferedImage backgroundImage;
 	private transient BufferedImage objectImage;
 	private String text = "";
+	private final boolean showBorder;
 
 	// Images already resampled to the exact device-pixel size they are drawn at
 	private transient BufferedImage scaledBackground;
 	private transient BufferedImage scaledObject;
 
-	public CellPanel() {
+	public CellPanel(boolean showBorder) {
+		this.showBorder = showBorder;
 		setPreferredSize(new Dimension(80, 80));
 		setOpaque(false);
 		setLayout(null);
@@ -106,8 +108,10 @@ public class CellPanel extends JPanel {
 		}
 
 		// Borde de la celda
-		g2.setColor(Color.BLACK);
-		g2.drawRect(0, 0, width - 1, height - 1);
+		if (showBorder) {
+			g2.setColor(Color.BLACK);
+			g2.drawRect(0, 0, width - 1, height - 1);
+		}
 	}
 
 	/**
