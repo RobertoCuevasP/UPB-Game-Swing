@@ -98,7 +98,7 @@ public class SwingWindow extends JFrame implements GraphicsLibrary, MessagesLibr
 	}
 
 	@Override
-	public void configureGrid(int rows, int cols) {
+	public void configureGrid(int rows, int cols, int sizeX, int sizeY, boolean showCellBorders) {
 		gridPanel.removeAll();
 		gridPanel.setLayout(new GridLayout(rows, cols));
 
@@ -106,7 +106,7 @@ public class SwingWindow extends JFrame implements GraphicsLibrary, MessagesLibr
 
 		for (int row = 0; row < rows; row++) {
 			for (int col = 0; col < cols; col++) {
-				CellPanel cellPanel = new CellPanel();
+				CellPanel cellPanel = new CellPanel(showCellBorders);
 
 				int currentRow = row;
 				int currentCol = col;
@@ -124,6 +124,9 @@ public class SwingWindow extends JFrame implements GraphicsLibrary, MessagesLibr
 				gridPanel.add(cellPanel);
 			}
 		}
+
+		setSize(sizeX, sizeY);
+		setLocationRelativeTo(null);
 
 		revalidate();
 		repaint();

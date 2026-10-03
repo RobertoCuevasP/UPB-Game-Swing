@@ -2,7 +2,7 @@ package edu.upb.lp.game.core;
 
 public interface GraphicsLibrary {
 
-    void configureGrid(int rows, int cols);
+    void configureGrid(int rows, int cols, int sizeX, int sizeY, boolean showCellBorders);
 
     void setCellText(int row, int col, String text);
 

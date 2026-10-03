@@ -45,7 +45,7 @@ public class BugWorldController implements GameController {
 
 	@Override
 	public void initialiseInterface() {
-		graphics.configureGrid(world.getRows(), world.getCols());
+		graphics.configureGrid(world.getRows(), world.getCols(), 900, 760, true);
 
 		graphics.addButton(BTN_RESTART);
 		graphics.addButton(BTN_PASS_DAY);
