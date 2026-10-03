@@ -3,6 +3,7 @@
 bin/
 target/
 build/
+upb-game.jar
 
 # Eclipse IDE Specific Metadata
 .project
