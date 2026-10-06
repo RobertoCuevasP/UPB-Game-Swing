@@ -7,18 +7,10 @@ import java.awt.GridLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
-import java.net.URL;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import javax.imageio.ImageIO;
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.Clip;
-import javax.sound.sampled.LineEvent;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -29,9 +21,10 @@ import javax.swing.SwingConstants;
 import javax.swing.Timer;
 
 import edu.upb.lp.game.core.GameController;
-import edu.upb.lp.game.core.GameUI;
+import edu.upb.lp.game.core.GraphicsLibrary;
+import edu.upb.lp.game.core.MessagesLibrary;
 
-public class SwingUI extends JFrame implements GameUI {
+public class SwingWindow extends JFrame implements GraphicsLibrary, MessagesLibrary {
 
 	/**
 	 * 
@@ -51,10 +44,8 @@ public class SwingUI extends JFrame implements GameUI {
 	private final Map<String, JButton> buttons = new HashMap<>();
 	private final Map<String, JLabel> labels = new HashMap<>();
 	private final Map<String, BufferedImage> imageCache = new HashMap<>();
-	private final Map<String, Timer> loops = new HashMap<>();
-	private final List<Clip> activeClips = new ArrayList<>();
 
-	public SwingUI() {
+	public SwingWindow() {
 		setTitle("UPBGame Swing Edition 2026");
 		setSize(900, 760);
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -90,7 +81,7 @@ public class SwingUI extends JFrame implements GameUI {
 	}
 
 	@Override
-	public void configureGrid(int rows, int cols) {
+	public void configureGrid(int rows, int cols, int sizeX, int sizeY, boolean showCellBorders) {
 		gridPanel.removeAll();
 		gridPanel.setLayout(new GridLayout(rows, cols));
 
@@ -98,7 +89,7 @@ public class SwingUI extends JFrame implements GameUI {
 
 		for (int row = 0; row < rows; row++) {
 			for (int col = 0; col < cols; col++) {
-				CellPanel cellPanel = new CellPanel();
+				CellPanel cellPanel = new CellPanel(showCellBorders);
 
 				int currentRow = row;
 				int currentCol = col;
@@ -116,6 +107,9 @@ public class SwingUI extends JFrame implements GameUI {
 				gridPanel.add(cellPanel);
 			}
 		}
+
+		setSize(sizeX, sizeY);
+		setLocationRelativeTo(null);
 
 		revalidate();
 		repaint();
@@ -251,80 +245,5 @@ public class SwingUI extends JFrame implements GameUI {
 		Timer timer = new Timer(2500, e -> temporaryMessageLabel.setText(" "));
 		timer.setRepeats(false);
 		timer.start();
-	}
-
-	@Override
-	public void executeLater(Runnable runnable, int milliseconds) {
-		Timer timer = new Timer(milliseconds, e -> runnable.run());
-		timer.setRepeats(false);
-		timer.start();
-	}
-
-	@Override
-	public String executeRepeatedly(Runnable runnable, int milliseconds) {
-		String loopId = UUID.randomUUID().toString();
-
-		Timer timer = new Timer(milliseconds, e -> runnable.run());
-		timer.start();
-
-		loops.put(loopId, timer);
-
-		return loopId;
-	}
-
-	@Override
-	public void stopLoop(String loopId) {
-		Timer timer = loops.remove(loopId);
-
-		if (timer != null) {
-			timer.stop();
-		}
-	}
-	
-	@Override
-	public void playSound(String soundName) {
-	    if (soundName == null || soundName.isBlank()) {
-	        return;
-	    }
-
-	    try {
-	        URL soundUrl = getClass().getResource("/sounds/" + soundName + ".wav");
-
-	        if (soundUrl == null) {
-	            System.out.println("Sound not found: " + soundName);
-	            return;
-	        }
-
-	        AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(soundUrl);
-	        Clip clip = AudioSystem.getClip();
-
-	        clip.open(audioInputStream);
-	        clip.start();
-
-	        activeClips.add(clip);
-
-	        clip.addLineListener(event -> {
-	            if (event.getType() == LineEvent.Type.STOP) {
-	                clip.close();
-	                activeClips.remove(clip);
-	            }
-	        });
-
-	    } catch (Exception e) {
-	        System.out.println("Error playing sound: " + soundName);
-	        e.printStackTrace();
-	    }
-	}
-
-	@Override
-	public void stopSounds() {
-	    for (Clip clip : new ArrayList<>(activeClips)) {
-	        if (clip.isRunning()) {
-	            clip.stop();
-	        }
-	        clip.close();
-	    }
-
-	    activeClips.clear();
 	}
 }

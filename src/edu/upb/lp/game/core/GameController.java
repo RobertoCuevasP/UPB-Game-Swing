@@ -7,4 +7,6 @@ public interface GameController {
     void onCellPressed(int row, int col);
 
     void initialiseInterface();
+
+    void setLibrary(MainLibrary library);
 }

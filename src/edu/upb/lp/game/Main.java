@@ -2,14 +2,15 @@ package edu.upb.lp.game;
 
 import edu.upb.lp.game.bugworld.BugWorldController;
 import edu.upb.lp.game.core.GameController;
-import edu.upb.lp.game.internal.SwingUI;
+import edu.upb.lp.game.core.MainLibrary;
+import edu.upb.lp.game.internal.MainSwingLibrary;
 
 public class Main {
     public static void main(String[] args) {
-        SwingUI ui = new SwingUI();
-        GameController controller = new BugWorldController(ui);
+        GameController controller = new BugWorldController();
+        MainLibrary lib = new MainSwingLibrary(controller);
 
-        ui.setController(controller);
+        controller.setLibrary(lib);
         controller.initialiseInterface();
     }
 }

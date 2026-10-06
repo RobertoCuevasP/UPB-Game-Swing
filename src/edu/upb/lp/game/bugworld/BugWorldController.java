@@ -1,8 +1,12 @@
 package edu.upb.lp.game.bugworld;
 
 import edu.upb.lp.game.core.GameController;
-import edu.upb.lp.game.core.GameUI;
-import edu.upb.lp.game.core.StorageManager;
+import edu.upb.lp.game.core.GraphicsLibrary;
+import edu.upb.lp.game.core.MessagesLibrary;
+import edu.upb.lp.game.core.SoundLibrary;
+import edu.upb.lp.game.core.StorageLibrary;
+import edu.upb.lp.game.core.TimeLibrary;
+import edu.upb.lp.game.core.MainLibrary;
 
 public class BugWorldController implements GameController {
 
@@ -12,9 +16,12 @@ public class BugWorldController implements GameController {
 	private static final String BTN_SELL_BUG = "Sell Bug";
 	private static final String BTN_CLEAN_CELL = "Clean Cell";
 
-	private final GameUI ui;
+	private GraphicsLibrary graphics;
+	private MessagesLibrary messages;
+	private TimeLibrary time;
+	private SoundLibrary sound;
+	private StorageLibrary storage;
 	private BugWorldGame world;
-	private StorageManager storageManager;
 	private ScoreManager scoreManager;
 
 	private int selectedRow = -1;
@@ -22,33 +29,40 @@ public class BugWorldController implements GameController {
 
 	private String dayLoopId;
 
-	public BugWorldController(GameUI ui) {
-		this.ui = ui;
+	public BugWorldController() {
 		this.world = new BugWorldGame(this);
-		this.storageManager = new StorageManager();
-		this.scoreManager = new ScoreManager(ui, storageManager);
+	}
+
+	@Override
+	public void setLibrary(MainLibrary lib) {
+		this.graphics = lib.getGraphics();
+		this.messages = lib.getMessages();
+		this.time = lib.getTime();
+		this.sound = lib.getSound();
+		this.storage = lib.getStorage();
+		this.scoreManager = new ScoreManager(messages, storage);
 	}
 
 	@Override
 	public void initialiseInterface() {
-		ui.configureGrid(world.getRows(), world.getCols());
+		graphics.configureGrid(world.getRows(), world.getCols(), 900, 760, true);
 
-		ui.addButton(BTN_RESTART);
-		ui.addButton(BTN_PASS_DAY);
-		ui.addButton(BTN_BUY_FOOD);
+		graphics.addButton(BTN_RESTART);
+		graphics.addButton(BTN_PASS_DAY);
+		graphics.addButton(BTN_BUY_FOOD);
 		startLoop();
 		updateInterface();
 	}
 
 	private void startLoop() {
-		dayLoopId = ui.executeRepeatedly(new AutomaticDayPasser(this), 10000);
+		dayLoopId = time.executeRepeatedly(new AutomaticDayPasser(this), 10000);
 		/*
-		 * dayLoopId = ui.executeRepeatedly(() -> { automaticDay(); }, 1000);
+		 * dayLoopId = time.executeRepeatedly(() -> { automaticDay(); }, 1000);
 		 */
 	}
 
 	private void stopLoop() {
-		ui.stopLoop(dayLoopId);
+		time.stopLoop(dayLoopId);
 	}
 
 	public void automaticDay() {
@@ -60,7 +74,7 @@ public class BugWorldController implements GameController {
 
 	@Override
 	public void onButtonPressed(String name) {
-		ui.playSound("click");
+		sound.playSound("click");
 		switch (name) {
 		case BTN_RESTART:
 			restartGame();
@@ -73,11 +87,11 @@ public class BugWorldController implements GameController {
 
 		case BTN_BUY_FOOD:
 			if (!world.canAffordFood()) {
-				ui.showTemporaryMessage("Not enough money.");
+				messages.showTemporaryMessage("Not enough money.");
 			} else if (world.buyFood()) {
 				showDayPassed();
 			} else {
-				ui.showTemporaryMessage("No more room for food!");
+				messages.showTemporaryMessage("No more room for food!");
 			}
 			break;
 
@@ -99,19 +113,19 @@ public class BugWorldController implements GameController {
 	}
 
 	public void bugDied(int row, int col, String reason) {
-		ui.showTemporaryMessage("Bug at (" + row + "," + col + ") died: " + reason);
+		messages.showTemporaryMessage("Bug at (" + row + "," + col + ") died: " + reason);
 	}
 
 	public void bugBorn(int row, int col) {
-		ui.showTemporaryMessage("A bug was born in the position (" + row + "," + col + ")");
+		messages.showTemporaryMessage("A bug was born in the position (" + row + "," + col + ")");
 	}
 
 	public void noRoomForBaby(int row, int col) {
-		ui.showTemporaryMessage("The bug in position (" + row + "," + col + ") is trying to have a baby, but there is no room!");
+		messages.showTemporaryMessage("The bug in position (" + row + "," + col + ") is trying to have a baby, but there is no room!");
 	}
 
 	private void showDayPassed() {
-		ui.showTemporaryMessage("A day has passed.");
+		messages.showTemporaryMessage("A day has passed.");
 	}
 
 	@Override
@@ -173,40 +187,40 @@ public class BugWorldController implements GameController {
 	}
 
 	private void updateLabels() {
-		ui.setLabel("score", "Score: " + world.getScore());
-		ui.setLabel("money", "Money: " + world.getMoney());
-		ui.setLabel("foodPrice", "Food price: " + world.getFoodPrice());
-		ui.setLabel("highScore", "High score: " + scoreManager.getHighScore() + " (" + scoreManager.getHighScoreName() + ")");
+		graphics.setLabel("score", "Score: " + world.getScore());
+		graphics.setLabel("money", "Money: " + world.getMoney());
+		graphics.setLabel("foodPrice", "Food price: " + world.getFoodPrice());
+		graphics.setLabel("highScore", "High score: " + scoreManager.getHighScore() + " (" + scoreManager.getHighScoreName() + ")");
 		if (hasSelectedCell()) {
 			Cell cell = world.getCell(selectedRow, selectedCol);
 
 			if (cell.isBugAlive()) {
 				Bug bug = cell.getBug();
-				ui.setLabel("selected", "Selected: Bug");
-				ui.setLabel("age", "Age: " + bug.getAge());
-				ui.setLabel("hunger", "Hunger: " + bug.getHunger());
-				ui.setLabel("fun", "Fun: " + bug.getFun());
+				graphics.setLabel("selected", "Selected: Bug");
+				graphics.setLabel("age", "Age: " + bug.getAge());
+				graphics.setLabel("hunger", "Hunger: " + bug.getHunger());
+				graphics.setLabel("fun", "Fun: " + bug.getFun());
 			} else if (cell.hasBug()) {
-				ui.setLabel("selected", "Selected: Dead bug");
-				ui.setLabel("age", "Age: -");
-				ui.setLabel("hunger", "Hunger: -");
-				ui.setLabel("fun", "Fun: -");
+				graphics.setLabel("selected", "Selected: Dead bug");
+				graphics.setLabel("age", "Age: -");
+				graphics.setLabel("hunger", "Hunger: -");
+				graphics.setLabel("fun", "Fun: -");
 			} else if (cell.getFood() > 0) {
-				ui.setLabel("selected", "Selected: Food");
-				ui.setLabel("age", "Food: " + cell.getFood());
-				ui.setLabel("hunger", "Hunger: -");
-				ui.setLabel("fun", "Fun: -");
+				graphics.setLabel("selected", "Selected: Food");
+				graphics.setLabel("age", "Food: " + cell.getFood());
+				graphics.setLabel("hunger", "Hunger: -");
+				graphics.setLabel("fun", "Fun: -");
 			} else {
-				ui.setLabel("selected", "Selected: Empty cell");
-				ui.setLabel("age", "Age: -");
-				ui.setLabel("hunger", "Hunger: -");
-				ui.setLabel("fun", "Fun: -");
+				graphics.setLabel("selected", "Selected: Empty cell");
+				graphics.setLabel("age", "Age: -");
+				graphics.setLabel("hunger", "Hunger: -");
+				graphics.setLabel("fun", "Fun: -");
 			}
 		} else {
-			ui.setLabel("selected", "Selected: none");
-			ui.setLabel("age", "Age: -");
-			ui.setLabel("hunger", "Hunger: -");
-			ui.setLabel("fun", "Fun: -");
+			graphics.setLabel("selected", "Selected: none");
+			graphics.setLabel("age", "Age: -");
+			graphics.setLabel("hunger", "Hunger: -");
+			graphics.setLabel("fun", "Fun: -");
 		}
 	}
 
@@ -223,21 +237,21 @@ public class BugWorldController implements GameController {
 		boolean selected = selectedRow == row && selectedCol == col;
 
 		if (selected) {
-			ui.setCellBackgroundImage(row, col, "colors_blue");
+			graphics.setCellBackgroundImage(row, col, "colors_blue");
 		} else {
-			ui.setCellBackgroundImage(row, col, "colors_grey");
+			graphics.setCellBackgroundImage(row, col, "colors_grey");
 		}
 
-		ui.clearCellObjectImage(row, col);
-		ui.setCellText(row, col, "");
+		graphics.clearCellObjectImage(row, col);
+		graphics.setCellText(row, col, "");
 
 		if (cell.isEmpty()) {
 			return;
 		}
 
 		if (cell.getFood() > 0) {
-			ui.setCellObjectImage(row, col, "food");
-			ui.setCellText(row, col, String.valueOf(cell.getFood()));
+			graphics.setCellObjectImage(row, col, "food");
+			graphics.setCellText(row, col, String.valueOf(cell.getFood()));
 			return;
 		}
 
@@ -248,21 +262,21 @@ public class BugWorldController implements GameController {
 		}
 
 		if (bug.isDead()) {
-			ui.setCellObjectImage(row, col, "bugs_dead_bug");
+			graphics.setCellObjectImage(row, col, "bugs_dead_bug");
 		} else if (bug.getHunger() > 10) {
-			ui.setCellObjectImage(row, col, "bugs_hungry_bug");
+			graphics.setCellObjectImage(row, col, "bugs_hungry_bug");
 		} else if (bug.getFun() < 10) {
-			ui.setCellObjectImage(row, col, "bugs_sad_bug");
+			graphics.setCellObjectImage(row, col, "bugs_sad_bug");
 		} else if (bug.getAge() > 15) {
-			ui.setCellObjectImage(row, col, "bugs_old_bug");
+			graphics.setCellObjectImage(row, col, "bugs_old_bug");
 		} else {
-			ui.setCellObjectImage(row, col, "bugs_happy_bug");
+			graphics.setCellObjectImage(row, col, "bugs_happy_bug");
 		}
 	}
 
 	private void updateActionButtons() {
-		ui.removeButton(BTN_SELL_BUG);
-		ui.removeButton(BTN_CLEAN_CELL);
+		graphics.removeButton(BTN_SELL_BUG);
+		graphics.removeButton(BTN_CLEAN_CELL);
 
 		if (!hasSelectedCell()) {
 			return;
@@ -271,9 +285,9 @@ public class BugWorldController implements GameController {
 		Cell cell = world.getCell(selectedRow, selectedCol);
 
 		if (cell.isBugAlive()) {
-			ui.addButton(BTN_SELL_BUG);
+			graphics.addButton(BTN_SELL_BUG);
 		} else if (!cell.isEmpty()) {
-			ui.addButton(BTN_CLEAN_CELL);
+			graphics.addButton(BTN_CLEAN_CELL);
 		}
 	}
 }
