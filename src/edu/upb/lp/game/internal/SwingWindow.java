@@ -216,7 +216,7 @@ public class SwingWindow extends JFrame implements GraphicsLibrary, MessagesLibr
 	}
 
 	private BufferedImage loadImage(String imageName) {
-		if (imageName == null || imageName.isBlank()) {
+		if (imageName == null || imageName.trim().isEmpty()) {
 			return null;
 		}
 

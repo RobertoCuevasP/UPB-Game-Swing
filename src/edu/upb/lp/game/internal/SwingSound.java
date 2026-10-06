@@ -17,7 +17,7 @@ public class SwingSound implements SoundLibrary {
 
 	@Override
 	public void playSound(String soundName) {
-	    if (soundName == null || soundName.isBlank()) {
+	    if (soundName == null || soundName.trim().isEmpty()) {
 	        return;
 	    }
 
