@@ -3,13 +3,13 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-JAVA_RELEASE=11
+JAVA_RELEASE=8
 OUT=build/jar
 JAR=upb-game.jar
 
 rm -rf build "$JAR"
 mkdir -p "$OUT"
-javac --release "$JAVA_RELEASE" -encoding UTF-8 -d "$OUT" $(find src -name "*.java")
+javac --release "$JAVA_RELEASE" -Xlint:-options -encoding UTF-8 -d "$OUT" $(find src -name "*.java")
 cp -r src/. "$OUT"/
 cp -r resources/images resources/sounds "$OUT"/
 jar --create --file "$JAR" --main-class edu.upb.lp.game.Main -C "$OUT" .

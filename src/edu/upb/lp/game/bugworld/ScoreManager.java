@@ -23,7 +23,7 @@ public class ScoreManager {
     public String getHighScoreName() {
         String name = storage.retrieveString(HIGH_SCORE_NAME_KEY);
 
-        if (name.isBlank()) {
+        if (name.trim().isEmpty()) {
             return "No player";
         } else {
         		return name;	
@@ -36,7 +36,7 @@ public class ScoreManager {
         if (currentScore > highScore) {
             String playerName = messages.askText("New high score! Enter your name:");
 
-            if (playerName == null || playerName.isBlank()) {
+            if (playerName == null || playerName.trim().isEmpty()) {
                 playerName = "Anonymous";
             }
 
